@@ -1,5 +1,9 @@
 # 🏗️ Golden Path Platform
 
+<!-- BEGIN: REPO HERO -->
+![golden-path-platform — hero generated locally on the GPU stack](assets/repo-hero.png)
+<!-- END: REPO HERO -->
+
 > **Enterprise Internal Developer Platform** — Standardized, policy-gated paths for building, deploying, and operating microservices at scale.
 
 [![CI](https://github.com/golden-path/golden-path-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/golden-path/golden-path-platform/actions/workflows/ci.yml)
