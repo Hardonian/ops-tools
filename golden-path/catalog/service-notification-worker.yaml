@@ -1,0 +1,33 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: notification-worker
+  namespace: default
+  description: Event-driven worker that processes notification events and delivers emails, SMS, and push notifications
+  annotations:
+    github.com/repo: golden-path/notification-worker
+    backstage.io/techdocs-ref: dir:.
+    backstage.io/managed-by: backstage
+  labels:
+    area: product
+    language: typescript
+    tier: worker
+  tags:
+    - worker
+    - event-driven
+    - notifications
+    - experimental
+  links:
+    - url: https://docs.golden-path.dev/notification-worker
+      title: Documentation
+      icon: docs
+spec:
+  type: service
+  lifecycle: experimental
+  owner: team-product
+  system: commerce-platform
+  dependsOn:
+    - resource:kafka-cluster
+    - component:billing-api
+  technology: node

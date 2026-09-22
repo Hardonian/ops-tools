@@ -1,0 +1,33 @@
+# Crossplane PostgreSQL Claim - Reference Contract
+# This is a reference contract, not a live resource.
+# Apply with: kubectl apply -f postgresql-claim.yaml
+# Requires Crossplane database-crossplane-provider installed.
+apiVersion: database.crossplane.io/v1beta1
+kind: PostgreSQLInstance
+metadata:
+  name: app-postgres
+  namespace: default
+  labels:
+    app.kubernetes.io/part-of: golden-path-platform
+spec:
+  compositionSelector:
+    matchLabels:
+      provider: aws-rds
+      tier: standard
+  parameters:
+    storageGB: 20
+    requestedStorageGB: 20
+    engineVersion: "15.4"
+    instanceSize: "db.t3.medium"
+    multiAZ: true
+    publiclyAccessible: false
+    backupRetentionPeriod: 7
+    deletionProtection: true
+    tags:
+      - key: Environment
+        value: production
+      - key: ManagedBy
+        value: crossplane
+  writeConnectionSecretToRef:
+    name: postgresql-conn
+    namespace: default

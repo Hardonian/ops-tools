@@ -1,0 +1,67 @@
+# NetworkPolicy allowing ingress from same namespace and egress to DNS + specific services
+# Golden Path Platform - Reference Manifest
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: app-service-netpol
+  namespace: default
+  labels:
+    app.kubernetes.io/name: app-service
+    app.kubernetes.io/part-of: golden-path-platform
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: app-service
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow traffic from ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+    # Allow traffic from other pods in the same namespace
+    - from:
+        - podSelector: {}
+  egress:
+    # Allow DNS resolution (kube-dns / CoreDNS)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+        - podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Allow egress to database service in same namespace
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgresql
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow egress to message broker in same namespace
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: rabbitmq
+      ports:
+        - protocol: TCP
+          port: 5672
+    # Allow egress to object storage (S3 endpoint)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443

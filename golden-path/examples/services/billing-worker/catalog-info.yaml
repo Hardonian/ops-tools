@@ -1,0 +1,27 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: billing-worker
+  description: Event-driven worker processing billing events for the commerce platform.
+  annotations:
+    github.com/project-slug: golden-path-platform/billing-worker
+    backstage.io/techdocs-ref: dir:.
+  tags:
+    - node
+    - worker
+    - event-driven
+    - typescript
+spec:
+  type: service
+  lifecycle: experimental
+  owner: team-product
+  system: commerce-platform
+  dependsOn:
+    - resource:commerce-platform/postgres
+    - resource:commerce-platform/redis
+  metadata:
+    tags:
+      - node
+      - worker
+    annotations:
+      backstage.io/techdocs-subdir: docs

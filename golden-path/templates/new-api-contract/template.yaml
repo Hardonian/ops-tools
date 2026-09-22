@@ -1,0 +1,83 @@
+---
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: new-api-contract
+  title: New API Contract
+  description: Create a new OpenAPI 3.0 API contract definition
+  tags:
+    - api
+    - openapi
+    - contract
+  annotations:
+    github.com/project-slug: golden-path-platform
+spec:
+  owner: user:scott
+  type: api
+  parameters:
+    - title: API Details
+      required:
+        - name
+        - owner
+        - system
+        - description
+      properties:
+        name:
+          title: API Name
+          type: string
+          description: Name of the API (kebab-case)
+          pattern: '^[a-z][a-z0-9-]*$'
+        owner:
+          title: Owner
+          type: string
+          description: Owner of the API (e.g. team-platform)
+        system:
+          title: System
+          type: string
+          description: System this API belongs to
+        description:
+          title: Description
+          type: string
+          description: A short description of the API
+    - title: Choose a location
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Repository Location
+          type: string
+          description: Where the repository will be created
+          ui:widget: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+  steps:
+    - id: fetch-base
+      name: Fetch Base
+      action: fetch:plain
+      input:
+        url: https://github.com/backstage/backstage/tree/master/packages/create-app/templates/default-template
+    - id: template
+      name: Template
+      action: fetch:template
+      input:
+        copyWithoutRender:
+          - .github/**
+        values:
+          component_name: ${{ parameters.name }}
+          owner: ${{ parameters.owner }}
+          system: ${{ parameters.system }}
+          description: ${{ parameters.description }}
+          entity: ${{ parameters.name }}
+          entityRef: api:${{ parameters.name }}
+    - id: register
+      name: Register
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps.fetch-base.output.remoteUrl }}
+        catalogInfoPath: /catalog-info.yaml
+  output:
+    links:
+      - title: Open in Catalog
+        icon: catalog
+        entityRef: ${{ steps.register.output.entityRef }}

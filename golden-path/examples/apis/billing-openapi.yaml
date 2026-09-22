@@ -1,0 +1,505 @@
+openapi: "3.0.3"
+info:
+  title: Billing API
+  description: Billing and invoicing API handling payment processing, subscriptions, and invoice management
+  version: "1.0.0"
+  contact:
+    name: Team Product
+    email: product@golden-path.dev
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.golden-path.dev/v1
+    description: Production
+  - url: https://api.staging.golden-path.dev/v1
+    description: Staging
+
+paths:
+  /invoices:
+    get:
+      operationId: listInvoices
+      summary: List all invoices
+      description: Returns a paginated list of invoices, optionally filtered by status or customer
+      tags:
+        - invoices
+      parameters:
+        - name: customerId
+          in: query
+          description: Filter invoices by customer ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          description: Filter invoices by payment status
+          required: false
+          schema:
+            type: string
+            enum:
+              - draft
+              - pending
+              - paid
+              - overdue
+              - cancelled
+        - name: limit
+          in: query
+          description: Maximum number of results to return
+          required: false
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: offset
+          in: query
+          description: Number of results to skip
+          required: false
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        "200":
+          description: Successfully retrieved list of invoices
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceListResponse"
+          headers:
+            X-Total-Count:
+              description: Total number of matching invoices
+              schema:
+                type: integer
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      operationId: createInvoice
+      summary: Create a new invoice
+      description: Creates a new draft invoice for a customer with line items
+      tags:
+        - invoices
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInvoiceRequest"
+      responses:
+        "201":
+          description: Invoice created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /invoices/{invoiceId}:
+    get:
+      operationId: getInvoiceById
+      summary: Get an invoice by ID
+      description: Returns the full details of a specific invoice including line items
+      tags:
+        - invoices
+      parameters:
+        - $ref: "#/components/parameters/InvoiceId"
+      responses:
+        "200":
+          description: Successfully retrieved invoice details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /invoices/{invoiceId}/submit:
+    post:
+      operationId: submitInvoice
+      summary: Submit an invoice for payment
+      description: Transitions a draft invoice to pending status and initiates the payment process
+      tags:
+        - invoices
+      parameters:
+        - $ref: "#/components/parameters/InvoiceId"
+      responses:
+        "200":
+          description: Invoice submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Invoice cannot be submitted (e.g., already submitted or cancelled)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /payments:
+    post:
+      operationId: processPayment
+      summary: Process a payment
+      description: Processes a payment against an invoice using the specified payment method
+      tags:
+        - payments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProcessPaymentRequest"
+      responses:
+        "201":
+          description: Payment processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          description: Payment declined by payment provider
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /payments/{paymentId}:
+    get:
+      operationId: getPaymentById
+      summary: Get payment details
+      description: Returns the details of a specific payment transaction
+      tags:
+        - payments
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          description: Unique identifier of the payment
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Successfully retrieved payment details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  parameters:
+    InvoiceId:
+      name: invoiceId
+      in: path
+      required: true
+      description: Unique identifier of the invoice
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    Invoice:
+      type: object
+      description: A billing invoice
+      required:
+        - id
+        - customerId
+        - status
+        - lineItems
+        - totalAmount
+        - currency
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        customerId:
+          type: string
+          format: uuid
+          description: Associated customer ID
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        status:
+          type: string
+          enum:
+            - draft
+            - pending
+            - paid
+            - overdue
+            - cancelled
+          description: Current invoice status
+          example: "draft"
+        lineItems:
+          type: array
+          description: List of billable line items
+          items:
+            $ref: "#/components/schemas/LineItem"
+        totalAmount:
+          type: number
+          format: double
+          description: Total invoice amount (sum of line items)
+          example: 149.99
+        currency:
+          type: string
+          description: ISO 4217 currency code
+          example: "USD"
+        dueDate:
+          type: string
+          format: date
+          description: Payment due date
+        notes:
+          type: string
+          description: Optional notes on the invoice
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 last update timestamp
+
+    LineItem:
+      type: object
+      description: A single line item on an invoice
+      required:
+        - description
+        - quantity
+        - unitPrice
+      properties:
+        description:
+          type: string
+          description: Line item description
+          example: "Premium subscription (monthly)"
+        quantity:
+          type: integer
+          description: Quantity
+          example: 1
+          minimum: 1
+        unitPrice:
+          type: number
+          format: double
+          description: Price per unit
+          example: 49.99
+          minimum: 0
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Optional metadata for the line item
+
+    Payment:
+      type: object
+      description: A payment transaction
+      required:
+        - id
+        - invoiceId
+        - amount
+        - currency
+        - status
+        - method
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique payment identifier
+          example: "b78a9c0d-1234-5678-9abc-def012345678"
+        invoiceId:
+          type: string
+          format: uuid
+          description: Associated invoice ID
+        amount:
+          type: number
+          format: double
+          description: Payment amount
+          example: 149.99
+        currency:
+          type: string
+          description: ISO 4217 currency code
+          example: "USD"
+        status:
+          type: string
+          enum:
+            - pending
+            - completed
+            - failed
+            - refunded
+          description: Payment status
+          example: "completed"
+        method:
+          type: string
+          enum:
+            - credit_card
+            - bank_transfer
+            - paypal
+            - stripe
+          description: Payment method used
+          example: "stripe"
+        transactionId:
+          type: string
+          description: External transaction reference from payment provider
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 creation timestamp
+
+    CreateInvoiceRequest:
+      type: object
+      description: Payload for creating a new invoice
+      required:
+        - customerId
+        - lineItems
+        - currency
+      properties:
+        customerId:
+          type: string
+          format: uuid
+          description: Customer ID to invoice
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        lineItems:
+          type: array
+          minItems: 1
+          description: Invoice line items
+          items:
+            $ref: "#/components/schemas/LineItem"
+        currency:
+          type: string
+          description: ISO 4217 currency code
+          example: "USD"
+        dueDate:
+          type: string
+          format: date
+          description: Optional payment due date
+        notes:
+          type: string
+          description: Optional invoice notes
+
+    ProcessPaymentRequest:
+      type: object
+      description: Payload for processing a payment
+      required:
+        - invoiceId
+        - amount
+        - currency
+        - method
+      properties:
+        invoiceId:
+          type: string
+          format: uuid
+          description: Invoice to pay
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        amount:
+          type: number
+          format: double
+          description: Amount to charge
+          example: 149.99
+          minimum: 0.01
+        currency:
+          type: string
+          description: ISO 4217 currency code
+          example: "USD"
+        method:
+          type: string
+          enum:
+            - credit_card
+            - bank_transfer
+            - paypal
+            - stripe
+          description: Payment method
+          example: "stripe"
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Optional payment metadata (e.g., card token, billing address)
+
+    InvoiceListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Invoice"
+        totalCount:
+          type: integer
+          description: Total number of invoices
+        hasMore:
+          type: boolean
+          description: Whether more results exist beyond this page
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+            message:
+              type: string
+              description: Human-readable error message
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  reason:
+                    type: string
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters or body
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Authentication required or invalid credentials
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: The requested resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from the authentication service
+
+security:
+  - bearerAuth: []

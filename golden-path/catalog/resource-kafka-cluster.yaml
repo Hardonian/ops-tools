@@ -1,0 +1,35 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: kafka-cluster
+  namespace: default
+  description: Apache Kafka message broker cluster for event streaming and asynchronous communication
+  annotations:
+    github.com/repo: golden-path/infrastructure
+    backstage.io/managed-by: backstage
+    prometheus.io/job: kafka-exporter
+  labels:
+    area: infrastructure
+    tier: messaging
+  tags:
+    - message-queue
+    - kafka
+    - event-streaming
+    - infrastructure
+  links:
+    - url: https://grafana.golden-path.dev/d/kafka
+      title: Grafana Dashboard
+      icon: dashboard
+    - url: https://kafka-ui.golden-path.dev
+      title: Kafka UI
+      icon: kafka
+spec:
+  type: message-queue
+  lifecycle: production
+  owner: team-platform
+  dependsOn: []
+  connectionInfo:
+    - target: kafka://kafka-cluster.messaging.svc:9092
+      title: Kafka Cluster
+      icon: message-queue

@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: billing-worker
+  namespace: commerce
+  labels:
+    app: billing-worker
+    app.kubernetes.io/name: billing-worker
+    app.kubernetes.io/component: worker
+    app.kubernetes.io/part-of: commerce-platform
+    app.kubernetes.io/managed-by: helm
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: billing-worker
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: billing-worker
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3001"
+        prometheus.io/path: "/health"
+    spec:
+      serviceAccountName: billing-worker
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+      containers:
+        - name: billing-worker
+          image: registry.internal/commerce/billing-worker:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: health
+              containerPort: 3001
+              protocol: TCP
+          env:
+            - name: PORT
+              value: "3001"
+            - name: NODE_ENV
+              value: "production"
+            - name: LOG_LEVEL
+              value: "info"
+            - name: HEARTBEAT_INTERVAL
+              value: "30000"
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: billing-worker-secrets
+                  key: redis-url
+                  optional: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: health
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: health
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /health
+              port: health
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 10
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 5"]
+      terminationGracePeriodSeconds: 45
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: billing-worker
+  namespace: commerce
+  labels:
+    app: billing-worker
+spec:
+  type: ClusterIP
+  selector:
+    app: billing-worker
+  ports:
+    - name: health
+      port: 80
+      targetPort: health
+      protocol: TCP

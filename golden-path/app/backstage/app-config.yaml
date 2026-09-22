@@ -1,0 +1,83 @@
+app:
+  title: Golden Path Platform
+  baseUrl: http://localhost:3000
+
+backend:
+  baseUrl: http://localhost:7007
+  listen:
+    port: 7007
+  csp:
+    connect-src:
+      - "'self'"
+      - "http:"
+      - "https:"
+    img-src:
+      - "'self'"
+      - "data:"
+    script-src:
+      - "'self'"
+      - "'unsafe-inline'"
+      - "'unsafe-eval'"
+    style-src:
+      - "'self'"
+      - "'unsafe-inline'"
+  database:
+    client: better-sqlite3
+    connection: ':memory:'
+
+auth:
+  providers:
+    guest:
+      dangerouslyAllowOutsideDevelopment: true
+
+catalog:
+  import:
+    entityFilename: catalog-info.yaml
+    pullRequestBranchName: main
+  locations:
+    - type: file
+      target: ../../catalog/info.yaml
+    - type: file
+      target: ../../catalog/team-platform.yaml
+    - type: file
+      target: ../../catalog/team-product.yaml
+    - type: file
+      target: ../../catalog/team-security.yaml
+    - type: file
+      target: ../../catalog/service-customer-api.yaml
+    - type: file
+      target: ../../catalog/service-billing-api.yaml
+    - type: file
+      target: ../../catalog/service-notification-worker.yaml
+    - type: file
+      target: ../../catalog/system-commerce-platform.yaml
+    - type: file
+      target: ../../catalog/domain-enterprise-platform.yaml
+    - type: file
+      target: ../../catalog/api-customer-openapi.yaml
+    - type: file
+      target: ../../catalog/api-billing-openapi.yaml
+    - type: file
+      target: ../../catalog/resource-postgres-cluster.yaml
+    - type: file
+      target: ../../catalog/resource-kafka-cluster.yaml
+  rules:
+    - allow: [Component, API, System, Domain, Resource, Group, Location]
+
+techdocs:
+  builder: local
+  generator:
+    runIn: docker
+  publisher:
+    type: local
+
+scaffolder:
+  defaultAuthor:
+    name: platform-team
+    email: platform@example.com
+  defaultCommitMessage: "feat: scaffold from golden path template"
+
+proxy: {}
+
+permission:
+  enabled: false

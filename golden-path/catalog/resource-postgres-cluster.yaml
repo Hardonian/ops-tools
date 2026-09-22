@@ -1,0 +1,32 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: postgres-cluster
+  namespace: default
+  description: PostgreSQL database cluster for persistent data storage across all commerce services
+  annotations:
+    github.com/repo: golden-path/infrastructure
+    backstage.io/managed-by: backstage
+    prometheus.io/job: postgres-exporter
+  labels:
+    area: infrastructure
+    tier: data
+  tags:
+    - database
+    - postgresql
+    - persistent
+    - infrastructure
+  links:
+    - url: https://grafana.golden-path.dev/d/postgres
+      title: Grafana Dashboard
+      icon: dashboard
+spec:
+  type: database
+  lifecycle: production
+  owner: team-platform
+  dependsOn: []
+  connectionInfo:
+    - target: postgres://commerce-db.cluster.svc:5432/commerce
+      title: Commerce Database
+      icon: database

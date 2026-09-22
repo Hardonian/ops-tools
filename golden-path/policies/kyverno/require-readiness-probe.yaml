@@ -1,0 +1,37 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-readiness-probe
+  annotations:
+    policies.kyverno.io/title: Require Readiness Probe
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      All Deployments must define a readinessProbe on their containers
+      to ensure Kubernetes can correctly route traffic and perform rolling
+      updates.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: check-readiness-probe
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+              operations:
+                - CREATE
+                - UPDATE
+      validate:
+        message: >-
+          Container '{{ element.name }}' in Deployment
+          '{{ request.object.metadata.name }}' must have a readinessProbe defined.
+        pattern:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: "*"
+                    readinessProbe:
+                      "?*": "?*"

@@ -1,0 +1,38 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: customer-api
+  namespace: default
+  description: Customer management REST API for creating, retrieving, updating, and deleting customer accounts
+  annotations:
+    github.com/repo: golden-path/customer-api
+    backstage.io/techdocs-ref: dir:.
+    backstage.io/managed-by: backstage
+  labels:
+    area: product
+    language: openapi
+    tier: api
+  tags:
+    - api
+    - openapi
+    - rest
+    - customer
+  links:
+    - url: https://docs.golden-path.dev/customer-api
+      title: Documentation
+      icon: docs
+    - url: https://api.golden-path.dev/customer/docs
+      title: Swagger UI
+      icon: swagger
+spec:
+  type: openapi
+  lifecycle: production
+  owner: team-product
+  system: commerce-platform
+  definition: |
+    openapi: "3.0.3"
+    info:
+      title: Customer API
+      version: "1.0.0"
+    paths: {}

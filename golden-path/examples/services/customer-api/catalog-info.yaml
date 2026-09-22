@@ -1,0 +1,36 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: customer-api
+  description: RESTful HTTP API serving customer data for the commerce platform.
+  annotations:
+    github.com/project-slug: golden-path-platform/customer-api
+    backstage.io/techdocs-ref: dir:.
+  tags:
+    - node
+    - express
+    - rest
+    - typescript
+  links:
+    - url: https://grafana.internal/d/customer-api
+      title: Grafana Dashboard
+      icon: dashboard
+    - url: https://pagerduty.internal/services/customer-api
+      title: PagerDuty
+      icon: alert
+spec:
+  type: service
+  lifecycle: production
+  owner: team-product
+  system: commerce-platform
+  providesApis:
+    - customer-api
+  dependsOn:
+    - resource:commerce-platform/postgres
+    - resource:commerce-platform/redis
+  metadata:
+    tags:
+      - node
+      - express
+    annotations:
+      backstage.io/techdocs-subdir: docs

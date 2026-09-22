@@ -1,0 +1,23 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: commerce-platform
+  namespace: default
+  description: Commerce platform system encompassing all customer, billing, and notification services
+  annotations:
+    github.com/org: golden-path
+    backstage.io/managed-by: backstage
+  labels:
+    area: commerce
+    tier: system
+  tags:
+    - commerce
+    - platform
+    - core
+spec:
+  lifecycle: production
+  owner: team-platform
+  providesApis:
+    - customer-api
+    - billing-api

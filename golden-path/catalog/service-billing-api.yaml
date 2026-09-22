@@ -1,0 +1,36 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: billing-api
+  namespace: default
+  description: Billing and invoicing API handling payment processing and subscription management
+  annotations:
+    github.com/repo: golden-path/billing-api
+    backstage.io/techdocs-ref: dir:.
+    backstage.io/managed-by: backstage
+  labels:
+    area: product
+    language: typescript
+    tier: api
+  tags:
+    - api
+    - rest
+    - billing
+    - payments
+    - typescript
+  links:
+    - url: https://docs.golden-path.dev/billing-api
+      title: Documentation
+      icon: docs
+spec:
+  type: service
+  lifecycle: production
+  owner: team-product
+  system: commerce-platform
+  providesApis:
+    - billing-api
+  dependsOn:
+    - resource:postgres-cluster
+    - resource:kafka-cluster
+  technology: node

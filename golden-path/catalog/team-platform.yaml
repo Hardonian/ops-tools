@@ -1,0 +1,23 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: team-platform
+  namespace: default
+  description: Platform engineering team responsible for infrastructure and shared services
+  annotations:
+    github.com/org: golden-path
+    backstage.io/managed-by: backstage
+  labels:
+    area: platform
+    tier: infrastructure
+  tags:
+    - platform
+    - infrastructure
+    - devops
+spec:
+  type: team
+  lifecycle: production
+  owner: team-platform
+  members:
+    - team-platform

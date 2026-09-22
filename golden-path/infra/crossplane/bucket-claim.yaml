@@ -1,0 +1,40 @@
+# Crossplane ObjectStorageBucket Claim - Reference Contract
+# This is a reference contract, not a live resource.
+# Apply with: kubectl apply -f bucket-claim.yaml
+# Requires Crossplane objectstorage-crossplane-provider installed.
+apiVersion: objectstorage.crossplane.io/v1beta1
+kind: Bucket
+metadata:
+  name: app-bucket
+  namespace: default
+  labels:
+    app.kubernetes.io/part-of: golden-path-platform
+spec:
+  compositionSelector:
+    matchLabels:
+      provider: aws-s3
+      tier: standard
+  parameters:
+    name: golden-path-app-data
+    region: us-east-1
+    encryption:
+      enabled: true
+      sseAlgorithm: AES256
+    versioning:
+      enabled: true
+    publicRead: false
+    lifecycleRules:
+      - status: Enabled
+        transitions:
+          - days: 90
+            storageClass: STANDARD_IA
+        expiration:
+          days: 365
+    tags:
+      - key: Environment
+        value: production
+      - key: ManagedBy
+        value: crossplane
+  writeConnectionSecretToRef:
+    name: bucket-conn
+    namespace: default

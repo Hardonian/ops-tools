@@ -1,0 +1,96 @@
+# Standard Deployment for an HTTP service
+# Golden Path Platform - Reference Manifest
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-service
+  namespace: default
+  labels:
+    app.kubernetes.io/name: app-service
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/part-of: golden-path-platform
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/managed-by: kubectl
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: app-service
+        app.kubernetes.io/version: "1.0.0"
+    spec:
+      serviceAccountName: app-service
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: app-service
+          image: registry.example.com/golden-path/app-service:1.0.0
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: LOG_LEVEL
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: PORT
+            - name: ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: ENVIRONMENT
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DB_PASSWORD
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: API_KEY
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 12

@@ -1,0 +1,20 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Domain
+metadata:
+  name: enterprise-platform
+  namespace: default
+  description: Enterprise platform domain covering all shared infrastructure and commerce services
+  annotations:
+    github.com/org: golden-path
+    backstage.io/managed-by: backstage
+  labels:
+    area: enterprise
+    tier: domain
+  tags:
+    - enterprise
+    - platform
+    - domain
+spec:
+  lifecycle: production
+  owner: team-platform

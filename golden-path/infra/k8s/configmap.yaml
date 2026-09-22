@@ -1,0 +1,17 @@
+# ConfigMap for application configuration
+# Golden Path Platform - Reference Manifest
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: default
+  labels:
+    app.kubernetes.io/name: app-service
+    app.kubernetes.io/part-of: golden-path-platform
+data:
+  LOG_LEVEL: "info"
+  PORT: "8080"
+  ENVIRONMENT: "production"
+  CACHE_TTL: "300"
+  MAX_CONNECTIONS: "100"
+  CORS_ORIGINS: "https://app.example.com"

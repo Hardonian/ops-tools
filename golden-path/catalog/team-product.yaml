@@ -1,0 +1,23 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: team-product
+  namespace: default
+  description: Product development team responsible for customer-facing services
+  annotations:
+    github.com/org: golden-path
+    backstage.io/managed-by: backstage
+  labels:
+    area: product
+    tier: application
+  tags:
+    - product
+    - customer-facing
+    - services
+spec:
+  type: team
+  lifecycle: production
+  owner: team-platform
+  members:
+    - team-product

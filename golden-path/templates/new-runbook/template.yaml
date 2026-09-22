@@ -1,0 +1,75 @@
+---
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: new-runbook
+  title: New Runbook
+  description: Create a new operational runbook for a service
+  tags:
+    - runbook
+    - operations
+    - docs
+  annotations:
+    github.com/project-slug: golden-path-platform
+spec:
+  owner: user:scott
+  type: documentation
+  parameters:
+    - title: Runbook Details
+      required:
+        - name
+        - service
+        - owner
+      properties:
+        name:
+          title: Runbook Name
+          type: string
+          description: Name of the runbook (kebab-case)
+          pattern: '^[a-z][a-z0-9-]*$'
+        service:
+          title: Service Name
+          type: string
+          description: Name of the service this runbook covers
+        owner:
+          title: Owner
+          type: string
+          description: Owner of the runbook (e.g. team-platform)
+    - title: Choose a location
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Repository Location
+          type: string
+          description: Where the repository will be created
+          ui:widget: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+  steps:
+    - id: fetch-base
+      name: Fetch Base
+      action: fetch:plain
+      input:
+        url: https://github.com/backstage/backstage/tree/master/packages/create-app/templates/default-template
+    - id: template
+      name: Template
+      action: fetch:template
+      input:
+        copyWithoutRender:
+          - .github/**
+        values:
+          component_name: ${{ parameters.name }}
+          service: ${{ parameters.service }}
+          owner: ${{ parameters.owner }}
+    - id: register
+      name: Register
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps.fetch-base.output.remoteUrl }}
+        catalogInfoPath: /catalog-info.yaml
+  output:
+    links:
+      - title: Open in Catalog
+        icon: catalog
+        entityRef: ${{ steps.register.output.entityRef }}

@@ -1,0 +1,49 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-app-labels
+  annotations:
+    policies.kyverno.io/title: Require App Labels
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      Deployments must have standard Kubernetes app labels defined for
+      proper service mesh integration, monitoring, and resource tracking.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-app-name-label
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+              operations:
+                - CREATE
+                - UPDATE
+      validate:
+        message: >-
+          Deployment '{{ request.object.metadata.name }}' must have
+          label 'app.kubernetes.io/name' defined.
+        pattern:
+          metadata:
+            labels:
+              app.kubernetes.io/name: "?*"
+    - name: require-app-owner-label
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+              operations:
+                - CREATE
+                - UPDATE
+      validate:
+        message: >-
+          Deployment '{{ request.object.metadata.name }}' must have
+          label 'app.kubernetes.io/owner' defined.
+        pattern:
+          metadata:
+            labels:
+              app.kubernetes.io/owner: "?*"

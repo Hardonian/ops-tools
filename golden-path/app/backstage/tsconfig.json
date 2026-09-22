@@ -1,0 +1,12 @@
+{
+  "extends": "@backstage/cli/config/tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2024",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2024"],
+    "skipLibCheck": true,
+    "types": ["node"]
+  },
+  "exclude": ["node_modules"]
+}

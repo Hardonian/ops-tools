@@ -1,0 +1,15 @@
+# PodDisruptionBudget to ensure at least 1 pod is available during disruptions
+# Golden Path Platform - Reference Manifest
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: app-service
+  namespace: default
+  labels:
+    app.kubernetes.io/name: app-service
+    app.kubernetes.io/part-of: golden-path-platform
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-service

@@ -1,0 +1,23 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: team-security
+  namespace: default
+  description: Security team responsible for application security, compliance, and threat modeling
+  annotations:
+    github.com/org: golden-path
+    backstage.io/managed-by: backstage
+  labels:
+    area: security
+    tier: cross-cutting
+  tags:
+    - security
+    - compliance
+    - threat-modeling
+spec:
+  type: team
+  lifecycle: production
+  owner: team-platform
+  members:
+    - team-security

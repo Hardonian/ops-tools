@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  install-and-build:
+    name: Install & Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [24]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: yarn
+          cache-dependency-path: app/backstage/yarn.lock
+
+      - name: Install Backstage dependencies
+        run: cd app/backstage && yarn install --frozen-lockfile
+
+      - name: Build Backstage app
+        run: cd app/backstage && yarn build
+
+  catalog-validate:
+    name: Catalog Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Validate catalog-info.yaml files
+        run: python3 scripts/validate-catalog.py
+
+  scorecard:
+    name: Production Readiness Scorecard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Run scorecard
+        run: python3 scripts/scorecard.py
+
+  policy-syntax:
+    name: OPA Policy Syntax Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup OPA
+        uses: open-policy-agent/setup-opa@v2
+        with:
+          version: latest
+
+      - name: Check policy syntax
+        run: opa fmt policies/opa/ --diff || echo "⚠️  Policy formatting issues detected"
+
+      - name: Run OPA policy tests
+        run: opa test policies/opa/ -v
+
+  markdown-link-check:
+    name: Markdown Link Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check markdown links
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          use-quiet-mode: "yes"
+          check-modified-files-only: "yes"
+          config-file: .markdown-link-check.json

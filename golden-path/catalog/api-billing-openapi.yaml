@@ -1,0 +1,39 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: billing-api-spec
+  namespace: default
+  description: Billing and invoicing OpenAPI specification for payment processing endpoints
+  annotations:
+    github.com/repo: golden-path/billing-api
+    backstage.io/techdocs-ref: dir:.
+    backstage.io/managed-by: backstage
+  labels:
+    area: product
+    language: openapi
+    tier: api
+  tags:
+    - api
+    - openapi
+    - rest
+    - billing
+    - payments
+  links:
+    - url: https://docs.golden-path.dev/billing-api
+      title: Documentation
+      icon: docs
+    - url: https://api.golden-path.dev/billing/docs
+      title: Swagger UI
+      icon: swagger
+spec:
+  type: openapi
+  lifecycle: production
+  owner: team-product
+  system: commerce-platform
+  definition: |
+    openapi: "3.0.3"
+    info:
+      title: Billing API
+      version: "1.0.0"
+    paths: {}

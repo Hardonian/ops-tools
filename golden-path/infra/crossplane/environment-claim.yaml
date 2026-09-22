@@ -1,0 +1,52 @@
+# Crossplane Environment Claim - Reference Contract
+# This is a reference contract, not a live resource.
+# This claim composes PostgreSQL + ObjectStorage Bucket + Message Broker
+# into a single platform-level abstraction.
+# Apply with: kubectl apply -f environment-claim.yaml
+# Requires Crossplane with appropriate compositions and providers installed.
+apiVersion: platform.example.com/v1alpha1
+kind: Environment
+metadata:
+  name: app-environment
+  namespace: default
+  labels:
+    app.kubernetes.io/part-of: golden-path-platform
+    environment: production
+spec:
+  compositionRef:
+    name: environment-production
+  compositionSelector:
+    matchLabels:
+      environment: production
+      provider: aws
+  parameters:
+    environmentName: production
+    region: us-east-1
+    # PostgreSQL configuration
+    database:
+      enabled: true
+      engineVersion: "15.4"
+      instanceSize: "db.t3.medium"
+      storageGB: 20
+      multiAZ: true
+    # Object Storage configuration
+    objectStorage:
+      enabled: true
+      bucketName: golden-path-app-data
+      encryption: true
+      versioning: true
+    # Message Broker configuration
+    messageBroker:
+      enabled: true
+      engine: rabbitmq
+      plan: standard
+      connections: 100
+    # Shared tags applied to all resources
+    tags:
+      Environment: production
+      Team: platform-engineering
+      ManagedBy: crossplane
+  # Connection secrets aggregated from child resources
+  writeConnectionSecretToRef:
+    name: environment-conn
+    namespace: default
