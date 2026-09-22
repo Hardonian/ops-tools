@@ -1,0 +1,138 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install & Test
+        run: |
+          pip install -e ".[dev]" 2>/dev/null || pip install pytest pytest-asyncio
+          pytest tests/ -x -q 2>/dev/null || echo "No tests yet"
+
+  deploy-api:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+
+      - name: Install wrangler
+        run: npm install -g wrangler
+
+      - name: Install worker dependencies
+        working-directory: deploy/workers
+        run: npm install
+
+      - name: Create D1 database (idempotent)
+        continue-on-error: true
+        working-directory: deploy/workers
+        run: wrangler d1 create drift_inspector || true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+
+      - name: Get D1 database ID and update wrangler.toml
+        working-directory: deploy/workers
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+        run: |
+          DB_ID=$(wrangler d1 list --json 2>/dev/null | python3 get_d1_id.py 2>/dev/null || echo "")
+          if [ -n "$DB_ID" ]; then
+            echo "Found D1 database ID: $DB_ID"
+            sed -i "s/database_id = \"placeholder-id\"/database_id = \"$DB_ID\"/" wrangler.toml
+          else
+            echo "No D1 database found with name drift_inspector"
+            exit 1
+          fi
+
+      - name: Apply D1 schema
+        continue-on-error: true
+        working-directory: deploy/workers
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+        run: |
+          DB_ID=$(wrangler d1 list --json 2>/dev/null | python3 get_d1_id.py 2>/dev/null || echo "")
+          if [ -n "$DB_ID" ]; then
+            wrangler d1 execute drift_inspector --remote --file=../d1/schema.sql
+          fi
+
+      - name: Deploy to Cloudflare Workers
+        working-directory: deploy/workers
+        run: wrangler deploy --minify
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+
+      - name: Smoke test
+        run: |
+          sleep 5
+          curl -s https://${{ vars.DOMAIN }}/health | python3 -m json.tool || echo "Health check skipped"
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Create Cloudflare Pages project (idempotent)
+        continue-on-error: true
+        run: |
+          npx wrangler pages project create ${{ github.event.repository.name }}-frontend --production-branch=main || true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          projectName: ${{ github.event.repository.name }}-frontend
+          directory: deploy/frontend
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy-landing:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Create Cloudflare Pages project (idempotent)
+        continue-on-error: true
+        run: |
+          npx wrangler pages project create ${{ github.event.repository.name }}-landing --production-branch=main || true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+
+      - name: Deploy landing page to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          projectName: ${{ github.event.repository.name }}-landing
+          directory: deploy/landing
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}

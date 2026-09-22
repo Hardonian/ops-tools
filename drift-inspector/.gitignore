@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+*.egg-info/
+.egg-info/
+dist/
+build/
+*.egg
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+terraform.tfvars
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Local runtime state
+drift_inspector.db
+# --- Hardonian bootstrap kit ---
+# Hardonian standard ignores
+!.env.template
+venv/
+target/
+.coverage
+htmlcov/
+
+# Cleanup additions
+.turbo
